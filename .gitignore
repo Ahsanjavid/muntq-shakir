@@ -1,0 +1,38 @@
+.env
+.venv
+chatbot/__pycache__
+chatbot/__init__.pyc
+
+SAP_Team_Requirements.md
+test_materials.py
+test_sap_connection.py
+so_items_with_plant.json
+test_so_items_detailed.py
+test_so_items_with_plant.py
+api_test_results.json
+chatbot/nodes/__pycache__
+chatbot/tools/__pycache__
+__pycache__
+__pycache__
+needtoresolve.txt
+filetest.py
+test_gaps.py
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual env
+.venv/
+
+# Env files
+.env
+
+# Test artifacts
+api_test_results.json
+test
+
+#CLAUDE files
+CLAUDE.md
+sap_schema

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MUNTQ</title>
+  <link rel="stylesheet" href="/chatbot-ui/style.css" />
+  <!-- Markdown rendering -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <!-- Charts -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+  <!-- ───── Chat Container ───── -->
+  <div class="chat-container">
+
+    <!-- Header -->
+    <header class="chat-header">
+      <div class="header-left">
+        <img class="muntq-logo-chat" src="/chatbot-ui/muntq-logo-white.png" alt="MUNTQ logo" />
+        <div class="header-text">
+          <span class="subtitle">AI Assistant</span>
+        </div>
+      </div>
+      <div class="header-right">
+        <span class="status-dot"></span>
+        <span class="status-text">Online</span>
+        <button id="btn-new-session" class="btn-icon" title="New Session">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Messages Area -->
+    <main class="chat-messages" id="chat-messages">
+      <!-- Welcome message -->
+      <div class="message bot-message">
+        <div class="avatar bot-avatar">M</div>
+        <div class="bubble bot-bubble">
+          <p>Hello! I'm <strong>MUNTQ</strong>, your AI assistant.</p>
+          <p>Ask me about sales orders, purchase orders, invoices, materials, deliveries, business partners, or journal entries.</p>
+          <p class="hint">Try: <em>"Show me top 5 sales orders"</em></p>
+        </div>
+      </div>
+    </main>
+
+    <!-- Input Area -->
+    <footer class="chat-input-area">
+      <div class="input-wrapper">
+        <textarea
+          id="user-input"
+          placeholder="Ask about SAP data..."
+          rows="1"
+          autocomplete="off"
+        ></textarea>
+        <button id="btn-send" class="btn-send" title="Send message">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13"></line>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+          </svg>
+        </button>
+      </div>
+      <div class="input-footer">
+        <span id="session-info" class="session-info">No active session</span>
+      </div>
+    </footer>
+
+  </div>
+  <script>window.DASHBOARD_API_BASE = window.DASHBOARD_API_BASE || "";</script>
+
+  <script src="/chatbot-ui/app.js"></script>
+</body>
+</html>
+
+
+
+
+

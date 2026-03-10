@@ -1,0 +1,198 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "${POSTGRES_HOST_PORT:-5433}:5432"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-qbot_db}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-qbot345qbot}
+    command:
+      - "postgres"
+      - "-c"
+      - "max_wal_size=1GB"
+      - "-c"
+      - "shared_buffers=512MB"
+      - "-c"
+      - "work_mem=16MB"
+      - "-c"
+      - "maintenance_work_mem=128MB"
+      - "-c"
+      - "effective_cache_size=1GB"
+      - "-c"
+      - "statement_timeout=60000"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./mcp_server/sql:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 2g
+          cpus: "2.0"
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "${REDIS_HOST_PORT:-6382}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+          cpus: "0.5"
+
+  mcp-postgres:
+    build:
+      context: .
+      dockerfile: mcp_server/Dockerfile
+    ports:
+      - "${MCP_HOST_PORT:-3002}:8000"
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=${POSTGRES_DB:-qbot_db}
+      - DB_USER=${MCP_DB_USER:-mcp_readonly}
+      - DB_PASSWORD=${MCP_DB_PASSWORD:-mcp_readonly_pass}
+      - DB_ADMIN_USER=${POSTGRES_USER:-postgres}
+      - DB_ADMIN_PASSWORD=${POSTGRES_PASSWORD:-qbot345qbot}
+      - MCP_HOST=0.0.0.0
+      - MCP_PORT=8000
+      - HOST=0.0.0.0
+      - PORT=8000
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/sse', timeout=3)"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 180s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+          cpus: "0.5"
+
+  qbot:
+    build:
+      context: .
+      dockerfile: Dockerfile.qbot
+    ports:
+      - "${QBOT_HOST_PORT:-5002}:5000"
+    env_file:
+      - .env
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - MCP_SERVER_URL=http://mcp-postgres:8000
+      - DASHBOARD_BASE_URL=http://dashboard:8001
+    depends_on:
+      redis:
+        condition: service_healthy
+      mcp-postgres:
+        condition: service_healthy
+      dashboard:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/health', timeout=5)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+          cpus: "1.0"
+
+  dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile.dashboard
+    ports:
+      - "${DASHBOARD_HOST_PORT:-8002}:8001"
+    env_file:
+      - dashboard/.env
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-qbot345qbot}@postgres:5432/${POSTGRES_DB:-qbot_db}
+      - RUN_SCHEDULER=false
+      - RUN_STARTUP_SYNC=false
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health', timeout=5)"]
+      interval: 30s
+      timeout: 5s
+      retries: 8
+      start_period: 180s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 2g
+          cpus: "1.5"
+
+  dashboard-ingest-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.dashboard-ingest
+    env_file:
+      - dashboard/.env
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-qbot345qbot}@postgres:5432/${POSTGRES_DB:-qbot_db}
+      - RUN_SCHEDULER=true
+      - RUN_STARTUP_SYNC=true
+    depends_on:
+      postgres:
+        condition: service_healthy
+    stop_grace_period: 60s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 4g
+          cpus: "2.0"
+
+  dashboard-aggregate-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.dashboard-aggregate
+    env_file:
+      - dashboard/.env
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-qbot345qbot}@postgres:5432/${POSTGRES_DB:-qbot_db}
+      - RUN_SCHEDULER=true
+      - RUN_STARTUP_SYNC=true
+    depends_on:
+      postgres:
+        condition: service_healthy
+      dashboard-ingest-worker:
+        condition: service_started
+    stop_grace_period: 60s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 4g
+          cpus: "2.0"
+
+volumes:
+  postgres_data:
+  redis_data:
+

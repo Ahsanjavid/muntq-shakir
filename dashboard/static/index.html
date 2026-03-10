@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MUNTQ Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <div class="app">
+    <!-- Sidebar -->
+    <nav class="sidebar">
+      <div class="sidebar-brand">
+        <img class="muntq-logo-sidebar" src="/static/muntq-logo-white.png" alt="MUNTQ logo" />
+        <span class="brand-text">Sales Report</span>
+      </div>
+      <ul class="nav-list">
+        <li class="nav-item active" data-page="today">
+          <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><rect x="2" y="10" width="4" height="8" rx="1"/><rect x="8" y="6" width="4" height="12" rx="1"/><rect x="14" y="2" width="4" height="16" rx="1"/></svg>
+          <span>Today Sales Report</span>
+        </li>
+        <li class="nav-item" data-page="mtd">
+          <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><rect x="2" y="2" width="16" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><line x1="2" y1="7" x2="18" y2="7" stroke="currentColor" stroke-width="1.5"/><line x1="7" y1="2" x2="7" y2="7" stroke="currentColor" stroke-width="1.5"/><circle cx="11" cy="12" r="2"/></svg>
+          <span>Month-To-Date</span>
+        </li>
+        <li class="nav-item" data-page="qtd">
+          <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><polyline points="2,16 6,10 10,13 14,5 18,8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span>Quarter-To-Date</span>
+        </li>
+        <li class="nav-item" data-page="trends">
+          <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><polyline points="2,14 7,8 12,11 18,4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><polyline points="14,4 18,4 18,8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span>Daily Sales Trends</span>
+        </li>
+        <li class="nav-item" data-page="orders">
+          <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><rect x="3" y="2" width="14" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><line x1="6" y1="6" x2="14" y2="6" stroke="currentColor" stroke-width="1.2"/><line x1="6" y1="9" x2="14" y2="9" stroke="currentColor" stroke-width="1.2"/><line x1="6" y1="12" x2="11" y2="12" stroke="currentColor" stroke-width="1.2"/></svg>
+          <span>Order Wise Report</span>
+        </li>
+        <li class="nav-item" data-page="chatbot">
+          <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><path d="M3 4h14a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H8l-4 3v-3H3a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="7" cy="9.5" r="1"/><circle cx="10" cy="9.5" r="1"/><circle cx="13" cy="9.5" r="1"/></svg>
+          <span>Chatbot Dashboard</span>
+        </li>
+      </ul>
+      <div class="sidebar-footer">
+        <span id="healthBadge" class="health-badge pending">Checking API...</span>
+      </div>
+    </nav>
+
+    <!-- Main content -->
+    <main class="main">
+      <header class="header">
+        <div class="header-left">
+          <h2 id="pageTitle" class="page-title">Today Sales Report</h2>
+          <span id="lastUpdated" class="last-updated">Last updated: --</span>
+        </div>
+        <div class="header-right">
+          <button id="refreshBtn" class="btn btn-primary">Refresh Data</button>
+        </div>
+      </header>
+
+      <!-- Filter Bar -->
+      <div id="filterBar" class="filter-bar">
+        <div class="filter-row">
+          <div class="filter-group">
+            <label>Sales Org</label>
+            <select id="filterSalesOrg" class="filter-select" data-dim="sales_organization"><option value="">All</option></select>
+          </div>
+          <div class="filter-group">
+            <label>Sales Office</label>
+            <select id="filterSalesOffice" class="filter-select" data-dim="sales_office"><option value="">All</option></select>
+          </div>
+          <div class="filter-group">
+            <label>Sales Group</label>
+            <select id="filterSalesGroup" class="filter-select" data-dim="sales_group"><option value="">All</option></select>
+          </div>
+          <div class="filter-group">
+            <label>Dist. Channel</label>
+            <select id="filterDistChannel" class="filter-select" data-dim="distribution_channel"><option value="">All</option></select>
+          </div>
+          <div class="filter-group">
+            <label>Division / Region</label>
+            <select id="filterSalesDistrict" class="filter-select" data-dim="sales_district"><option value="">All</option></select>
+          </div>
+          <div class="filter-group">
+            <label>Order Type</label>
+            <select id="filterOrderType" class="filter-select" data-dim="sales_order_type"><option value="">All</option></select>
+          </div>
+        </div>
+        <div class="filter-row">
+          <div class="filter-group">
+            <label>Customer Group</label>
+            <select id="filterCustomerGroup" class="filter-select" data-dim="customer_group"><option value="">All</option></select>
+          </div>
+          <div class="filter-group">
+            <label>Customer</label>
+            <select id="filterCustomer" class="filter-select" data-dim="sold_to_party"><option value="">All</option></select>
+          </div>
+          <div class="filter-group">
+            <label>PO / Salesman Ref</label>
+            <select id="filterPurchaseOrder" class="filter-select" data-dim="purchase_order_by_customer"><option value="">All</option></select>
+          </div>
+          <div class="filter-group" id="filterDateRangeGroup">
+            <label>Date From</label>
+            <input type="date" id="filterDateFrom" class="filter-date" />
+          </div>
+          <div class="filter-group">
+            <label>Date To</label>
+            <input type="date" id="filterDateTo" class="filter-date" />
+          </div>
+          <div class="filter-group filter-group-actions">
+            <button id="clearFiltersBtn" class="btn btn-outline" style="display:none;">Clear Filters</button>
+          </div>
+          <div class="filter-group filter-group-actions">
+            <div class="view-options-wrap">
+              <button id="viewOptionsBtn" class="btn btn-outline" type="button">View Options</button>
+              <div id="viewOptionsMenu" class="view-options-menu" style="display:none;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="pageContent" class="page-content">
+        <div class="loading-state">Loading dashboard data...</div>
+      </div>
+    </main>
+  </div>
+
+  <div id="chatWidget" class="chat-widget">
+    <button id="chatLauncher" class="chat-launcher" type="button" aria-label="Open chatbot">
+      <span class="chat-launcher-text">Chat</span>
+    </button>
+    <section id="chatPanel" class="chat-panel" aria-hidden="true">
+      <header class="chat-panel-header">
+        <div class="chat-panel-brand">
+          <img class="muntq-logo-chatpanel" src="/static/muntq-logo-blue.png" alt="MUNTQ logo" />
+    
+        </div>
+        <div class="chat-panel-actions">
+          <button id="chatMinimizeBtn" type="button" aria-label="Minimize chat">_</button>
+          <button id="chatCloseBtn" type="button" aria-label="Close chat">x</button>
+        </div>
+      </header>
+      <iframe
+        id="chatIframe"
+        class="chat-iframe"
+        title="Chatbot"
+        loading="lazy"
+        referrerpolicy="no-referrer"
+      ></iframe>
+    </section>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
+
+
+
+
+
