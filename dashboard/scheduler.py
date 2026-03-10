@@ -29,6 +29,19 @@ _job_lock = asyncio.Lock()
 _ingest_lock = asyncio.Lock()
 _aggregate_lock = asyncio.Lock()
 
+# asyncpg/PostgreSQL cannot handle more than 32767 bound params in one query.
+# Keep a conservative cap to stay safe even if model columns change.
+_MAX_SAFE_UPSERT_BATCH = 3000
+_EFFECTIVE_UPSERT_BATCH = min(BATCH_UPSERT_SIZE, _MAX_SAFE_UPSERT_BATCH)
+
+if BATCH_UPSERT_SIZE > _MAX_SAFE_UPSERT_BATCH:
+    logger.warning(
+        "BATCH_UPSERT_SIZE=%d is too high for safe Postgres parameter limits; "
+        "using %d instead",
+        BATCH_UPSERT_SIZE,
+        _EFFECTIVE_UPSERT_BATCH,
+    )
+
 
 def _parse_sap_datetime(raw_value):
     if not raw_value:
@@ -130,8 +143,8 @@ async def _upsert_sales_snapshots(db, rows):
         return 0
 
     upserted = 0
-    for i in range(0, len(values), BATCH_UPSERT_SIZE):
-        batch = values[i : i + BATCH_UPSERT_SIZE]
+    for i in range(0, len(values), _EFFECTIVE_UPSERT_BATCH):
+        batch = values[i : i + _EFFECTIVE_UPSERT_BATCH]
         stmt = pg_insert(SalesOrderSnapshot).values(batch)
         stmt = stmt.on_conflict_do_update(
             index_elements=["tenant_id", "sales_order"],
@@ -173,8 +186,8 @@ async def _upsert_billing_snapshots(db, rows):
         return 0
 
     upserted = 0
-    for i in range(0, len(values), BATCH_UPSERT_SIZE):
-        batch = values[i : i + BATCH_UPSERT_SIZE]
+    for i in range(0, len(values), _EFFECTIVE_UPSERT_BATCH):
+        batch = values[i : i + _EFFECTIVE_UPSERT_BATCH]
         stmt = pg_insert(BillingSnapshot).values(batch)
         stmt = stmt.on_conflict_do_update(
             index_elements=["tenant_id", "billing_document"],

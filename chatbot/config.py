@@ -36,7 +36,12 @@ class Settings(BaseSettings):
     DEV_USER_ID: str = "USER_ADMIN"
     DEV_USER_ROLE: str = "admin"
 
-    model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
+    model_config = {
+        "env_file": ".env",
+        "env_file_encoding": "utf-8",
+        # Allow shared .env files to include compose-only variables.
+        "extra": "ignore",
+    }
 
 
 settings = Settings()
